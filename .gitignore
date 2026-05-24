@@ -208,9 +208,16 @@ __marimo__/
 
 # Ollama model cache
 ollama_models/
+
 # Terraform
 infra/terraform/.terraform/
 *.tfstate
 *.tfstate.backup
 *.tfvars
 .terraform.lock.hcl
+
+# Personal & assistant files
+.private/
+.claude/
+CLAUDE.md
+RAG-Knowledge-Assistant.code-workspace
