@@ -1,6 +1,7 @@
 .env
 .git
 .gitignore
+.pytest_cache
 .venv
 .private
 .claude
