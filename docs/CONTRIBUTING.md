@@ -43,6 +43,40 @@ make lint && make fmt && make test
 
 ---
 
+## Database migrations
+
+### Applying migrations
+
+```bash
+make migrate
+```
+
+Run this after cloning, after pulling a branch that added a migration, and in CI before tests.
+
+### Creating a migration
+
+Only needed when you change a model (add/remove a table or column). Run inside the app container so it can compare your models against the live database:
+
+```bash
+docker compose exec app alembic revision --autogenerate -m "short description of change"
+```
+
+This generates a file in `app/db/migrations/versions/`. **Always review it before applying**.
+
+```bash
+docker compose build migrate
+make migrate
+```
+
+### Rolling back
+
+```bash
+docker compose exec app alembic downgrade base    # undo all migrations
+docker compose exec app alembic downgrade -1      # undo only the most recent
+```
+
+---
+
 ## Branch naming
 
 ```
