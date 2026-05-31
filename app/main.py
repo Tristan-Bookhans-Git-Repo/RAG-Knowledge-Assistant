@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -5,20 +6,17 @@ import httpx
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from app.config import settings
+from app.db.session import engine
 
-_engine: AsyncEngine | None = None
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    global _engine
-    _engine = create_async_engine(settings.DATABASE_URL)
     yield
-    if _engine:
-        await _engine.dispose()
+    await engine.dispose()
 
 
 app = FastAPI(title="RAG Knowledge Assistant", lifespan=lifespan)
@@ -32,13 +30,12 @@ async def health() -> dict[str, str]:
 @app.get("/ready")
 async def ready() -> JSONResponse:
     db_status = "down"
-    if _engine is not None:
-        try:
-            async with _engine.connect() as conn:
-                await conn.execute(text("SELECT 1"))
-            db_status = "up"
-        except Exception:
-            pass
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_status = "up"
+    except Exception as exc:
+        logger.warning("DB readiness check failed: %s", exc)
 
     ollama_status = "n/a"
     if settings.LLM_PROVIDER == "ollama":
@@ -46,7 +43,8 @@ async def ready() -> JSONResponse:
             async with httpx.AsyncClient() as client:
                 resp = await client.get(f"{settings.OLLAMA_HOST}/api/tags", timeout=3.0)
             ollama_status = "up" if resp.status_code == 200 else "down"
-        except Exception:
+        except Exception as exc:
+            logger.warning("Ollama readiness check failed: %s", exc)
             ollama_status = "down"
 
     overall = "ok" if db_status == "up" else "degraded"
