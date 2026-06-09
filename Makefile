@@ -1,9 +1,15 @@
-.PHONY: up down migrate pull-models test lint fmt typecheck shell
+.PHONY: up down stop start migrate pull-models test lint fmt typecheck shell
 
 override ARGS += $(FLAGS)
 
 up:
 	docker compose up -d --build $(ARGS)
+
+stop:
+	docker compose stop $(ARGS)
+
+start:
+	docker compose start $(ARGS)
 
 down:
 	docker compose down $(ARGS)

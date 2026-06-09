@@ -27,7 +27,9 @@ The app reloads automatically on file changes (uvicorn `--reload` + volume mount
 | Command | What it does |
 |---|---|
 | `make up` | Build images and start all services |
-| `make down` | Stop and remove containers |
+| `make stop` | Pause all containers (preserves state, fast to resume) |
+| `make start` | Resume paused containers |
+| `make down` | Stop and remove containers (full teardown) |
 | `make migrate` | Run pending Alembic migrations |
 | `make test` | Run the full pytest suite inside the app container |
 | `make lint` | Run ruff check (linting) |
