@@ -15,7 +15,7 @@ asyncpg = "^0.30"
 alembic = "^1.14"
 pydantic = "^2.10"
 pydantic-settings = "^2.7"
-python-jose = { extras = ["cryptography"], version = "^3.3" }
+PyJWT = { extras = ["crypto"], version = "^2.0" }
 bcrypt = "^4.0"
 pgvector = "^0.3"
 langchain = "^1.2"
