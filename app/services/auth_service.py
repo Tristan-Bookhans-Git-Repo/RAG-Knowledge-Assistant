@@ -20,6 +20,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(user_id: str) -> str:
     payload = {
         "sub": user_id,
+        "type": "access",
         "exp": datetime.now(UTC) + timedelta(minutes=settings.JWT_ACCESS_TTL_MINUTES),
         "iat": datetime.now(UTC),
     }
@@ -29,6 +30,7 @@ def create_access_token(user_id: str) -> str:
 def create_refresh_token(user_id: str) -> str:
     payload = {
         "sub": user_id,
+        "type": "refresh",
         "exp": datetime.now(UTC) + timedelta(days=settings.JWT_REFRESH_TTL_DAYS),
         "iat": datetime.now(UTC),
     }

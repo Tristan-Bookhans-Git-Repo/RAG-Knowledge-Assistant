@@ -162,3 +162,10 @@ Enforced automatically by ruff and mypy (run via `make lint`, `make fmt`, `make 
 - Fill in the PR template: description, test plan
 - All checks must pass before merge (lint, typecheck, tests)
 - Squash-merge to keep history linear
+
+---
+
+## Testing
+
+Use the below command when testing a specific testcase. The `-s` allows print statements to be returned in the output:
+- `make test FLAGS="<test_file_path>::<specific_testcase> -s"`
