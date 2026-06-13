@@ -1,4 +1,4 @@
-.PHONY: up down stop start migrate pull-models test lint fmt typecheck shell
+.PHONY: up down stop start migrate pull-models test coverage lint fmt typecheck shell
 
 override ARGS += $(FLAGS)
 
@@ -23,6 +23,9 @@ pull-models:
 
 test:
 	docker compose exec app pytest -v $(ARGS)
+
+coverage:
+	docker compose exec app pytest -v --cov=app --cov-report=term-missing --cov-report=html:htmlcov $(ARGS)
 
 lint:
 	docker compose exec app ruff check . $(ARGS)
