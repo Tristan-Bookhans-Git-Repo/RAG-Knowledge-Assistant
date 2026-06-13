@@ -221,3 +221,7 @@ infra/terraform/.terraform/
 .claude/
 CLAUDE.md
 RAG-Knowledge-Assistant.code-workspace
+
+# Postman
+.postman/
+postman/
