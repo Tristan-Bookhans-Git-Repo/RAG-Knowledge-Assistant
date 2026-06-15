@@ -33,6 +33,7 @@ httpx = "^0.28"
 pytest = "^8.3"
 pytest-asyncio = "^0.25"
 pytest-cov = "^6.0"
+fpdf2 = "^2.7"
 ruff = "^0.8"
 mypy = "^1.13"
 
