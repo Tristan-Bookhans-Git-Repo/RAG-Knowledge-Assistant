@@ -10,12 +10,14 @@ from sqlalchemy import text
 from app.config import settings
 from app.db.session import engine
 from app.routers.auth import router as auth_router
+from app.services.embeddings import get_embeddings, validate_embedding_dim
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    validate_embedding_dim(get_embeddings())
     yield
     await engine.dispose()
 
