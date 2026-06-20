@@ -11,6 +11,17 @@ from app.main import app
 
 
 @pytest.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    test_engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
+    TestSession = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async with TestSession() as session:
+        yield session
+
+    await test_engine.dispose()
+
+
+@pytest.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     # NullPool disables connection pooling so each test gets fresh asyncpg
     # connections within its own event loop — avoids "attached to a different
