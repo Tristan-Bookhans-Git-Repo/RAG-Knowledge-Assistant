@@ -9,7 +9,7 @@ from app.models.user import User
 from app.services.vector_store import bulk_insert_chunks, similarity_search
 
 
-def unit_vector(index: int, dim: int = settings.EMBEDDING_DIM, sign: float = 1.0) -> list[float]:
+def unit_vector(index: int, dim: int = settings.EMBED_DIM, sign: float = 1.0) -> list[float]:
     vec = [0.0] * dim
     vec[index] = sign
     return vec

@@ -6,6 +6,10 @@ from pypdf import PdfReader
 SUPPORTED_TYPES = frozenset({"pdf", "docx", "txt", "md"})
 
 
+class UnsupportedFileTypeError(ValueError):
+    pass
+
+
 def parse(file_bytes: bytes, file_type: str) -> str:
     match file_type.lower():
         case "pdf":
@@ -15,7 +19,7 @@ def parse(file_bytes: bytes, file_type: str) -> str:
         case "txt" | "md":
             return file_bytes.decode("utf-8")
         case _:
-            raise ValueError(
+            raise UnsupportedFileTypeError(
                 f"Unsupported file type: {file_type!r}. "
                 + f"Supported: {', '.join(sorted(SUPPORTED_TYPES))}"
             )
