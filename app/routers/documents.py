@@ -1,6 +1,8 @@
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -110,3 +112,31 @@ async def upload_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Document processing failed.",
         )
+
+
+@router.get("", response_model=list[DocumentResponse])
+async def list_documents(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[Document]:
+    result = await db.execute(
+        select(Document)
+        .where(Document.user_id == current_user.id)
+        .order_by(Document.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+@router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    doc_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    doc = await db.get(Document, doc_id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+    await db.execute(delete(Document).where(Document.id == doc_id))
+    await db.commit()
