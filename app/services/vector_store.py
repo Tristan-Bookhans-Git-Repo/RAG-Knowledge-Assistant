@@ -19,12 +19,7 @@ async def similarity_search(
     db: AsyncSession, query_embedding: list[float], user_id: uuid.UUID, top_k: int = 5
 ) -> list[SimilarityResult]:
     distance = Chunk.embedding.cosine_distance(query_embedding).label("distance")
-    stmt = (
-        select(Chunk, distance)
-        .where(Chunk.user_id == user_id)
-        .order_by(distance)
-        .limit(top_k)
-    )
+    stmt = select(Chunk, distance).where(Chunk.user_id == user_id).order_by(distance).limit(top_k)
     rows = (await db.execute(stmt)).all()
     return [
         SimilarityResult(
