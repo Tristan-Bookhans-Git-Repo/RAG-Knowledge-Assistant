@@ -129,7 +129,7 @@ agent = workflow.compile()
 flowchart TD
     START([START]) --> agent
 
-    agent["🤖 agent\nLLM decides next action\ncall_agent()"]
+    agent["agent\nLLM decides next action\ncall_agent()"]
 
     agent --> router{should_continue?}
 
