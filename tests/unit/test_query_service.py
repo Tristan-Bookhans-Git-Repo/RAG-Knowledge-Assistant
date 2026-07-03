@@ -39,7 +39,10 @@ def _final_state_event(answer: str) -> dict[str, Any]:
 
 
 def _retrieve_event(sources: list[Any]) -> dict[str, Any]:
-    return {"event": "on_tool_end", "name": "retrieve", "data": {"output": sources}}
+    # ToolNode wraps tool output in a ToolMessage; the raw list lives on .artifact
+    tool_message = MagicMock()
+    tool_message.artifact = sources
+    return {"event": "on_tool_end", "name": "retrieve", "data": {"output": tool_message}}
 
 
 def _web_search_event() -> dict[str, Any]:

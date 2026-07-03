@@ -35,7 +35,8 @@ async def test_retrieve_tool_calls_similarity_search_with_correct_args() -> None
     mock_search.assert_called_once_with(mock_db, fake_embedding, user_id)
 
 
-async def test_retrieve_tool_returns_similarity_results() -> None:
+async def test_retrieve_tool_returns_similarity_results_as_artifact() -> None:
+    """The raw results survive on ToolMessage.artifact (see retrieve_tool.py docstring)."""
     user_id = uuid.uuid4()
     expected = _make_expected(uuid.uuid4(), uuid.uuid4())
     mock_db = MagicMock()
@@ -47,9 +48,16 @@ async def test_retrieve_tool_returns_similarity_results() -> None:
     ):
         mock_embeddings.return_value.embed_query.return_value = [0.0] * 768
         retrieve_tool = make_retrieve_tool(user_id, mock_db)
-        result = await retrieve_tool.ainvoke({"query": "what is RAG?"})
+        tool_call = {
+            "name": "retrieve",
+            "args": {"query": "what is RAG?"},
+            "id": "tc1",
+            "type": "tool_call",
+        }
+        message = await retrieve_tool.ainvoke(tool_call)
 
-    assert result == expected
+    assert message.artifact == expected
+    assert message.content == "relevant passage"
 
 
 def test_retrieve_tool_user_id_not_in_schema() -> None:

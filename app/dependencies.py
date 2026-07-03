@@ -4,11 +4,13 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from langchain_core.language_models import BaseChatModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.user import User
 from app.services.auth_service import decode_token
+from app.services.llm import get_chat_model
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -45,3 +47,7 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     return user
+
+
+def get_llm() -> BaseChatModel:
+    return get_chat_model()
