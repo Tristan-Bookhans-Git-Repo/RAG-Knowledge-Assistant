@@ -11,6 +11,7 @@ from app.config import settings
 from app.db.session import engine
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
+from app.routers.query import router as query_router
 from app.services.embeddings import get_embeddings, validate_embedding_dim
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(title="RAG Knowledge Assistant", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(documents_router)
+app.include_router(query_router)
 
 
 @app.get("/health")

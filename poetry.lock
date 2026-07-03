@@ -1697,6 +1697,23 @@ files = [
 typing-extensions = ">=4.13.0,<5.0.0"
 
 [[package]]
+name = "langchain-tavily"
+version = "0.2.18"
+description = "An integration package connecting Tavily and LangChain"
+optional = false
+python-versions = "<4.0,>=3.10"
+files = [
+    {file = "langchain_tavily-0.2.18-py3-none-any.whl", hash = "sha256:dccf3ad1c50e2cb2a89bec11727555805c9df8abd42c1f3ad42ccad86e28aa44"},
+    {file = "langchain_tavily-0.2.18.tar.gz", hash = "sha256:cd7859ae1a6ce79236580ef67072ff5fc43c7ded94e7eac38ff04209ca85a320"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.11.14,<4.0.0"
+langchain = ">=1.0.0,<2.0.0"
+langchain-core = ">=1.2.11,<2.0.0"
+requests = ">=2.32.3,<3.0.0"
+
+[[package]]
 name = "langchain-text-splitters"
 version = "1.1.2"
 description = "LangChain text splitting utilities"
@@ -4675,4 +4692,4 @@ cffi = ["cffi (>=1.17,<2.0)", "cffi (>=2.0.0b)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "72da1e5040d523991fd328f3b92b9ab4cb7e0106f429c5564273d05d16821c72"
+content-hash = "bb09e92aed1b46c1878f766d34795de0762deb9b3b8fd3bd448ab458f615266c"
