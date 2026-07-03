@@ -1,6 +1,7 @@
 import uuid
 from typing import Any, TypedDict
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,8 +21,9 @@ async def run(
     use_web_search: bool,
     user_id: uuid.UUID,
     db: AsyncSession,
+    llm: BaseChatModel | None = None,
 ) -> QueryResult:
-    agent = build_agent(user_id, db, use_web_search=use_web_search)
+    agent = build_agent(user_id, db, use_web_search=use_web_search, llm=llm)
     sources: list[SimilarityResult] = []
     used_web_search_detected = False
     final_state: dict[str, Any] | None = None
@@ -36,8 +38,12 @@ async def run(
             tool_name = event.get("name", "")
             if tool_name == "retrieve":
                 output = event["data"].get("output")
-                if isinstance(output, list):
-                    sources.extend(output)
+                # ToolNode wraps every tool return in a ToolMessage and stringifies
+                # non-str content — the raw list survives on .artifact instead
+                # (see retrieve_tool.py's response_format="content_and_artifact")
+                artifact = getattr(output, "artifact", None)
+                if isinstance(artifact, list):
+                    sources.extend(artifact)
             elif tool_name == "web_search_tool":
                 used_web_search_detected = True
 

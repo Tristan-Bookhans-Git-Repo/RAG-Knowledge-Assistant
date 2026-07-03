@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from langchain.agents import create_agent
+from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,12 +27,14 @@ def build_agent(
     db: AsyncSession,
     max_iterations: int = _DEFAULT_MAX_ITERATIONS,
     use_web_search: bool = True,
+    llm: BaseChatModel | None = None,
 ) -> Any:
+    model = llm if llm is not None else get_chat_model()
     tools: list[BaseTool] = [make_retrieve_tool(user_id, db), clarify_tool]
     if use_web_search:
         tools.append(web_search_tool)
     agent = create_agent(
-        model=get_chat_model(),
+        model=model,
         tools=tools,
         system_prompt=_SYSTEM_PROMPT,
     )
