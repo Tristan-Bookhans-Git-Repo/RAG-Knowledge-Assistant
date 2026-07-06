@@ -28,9 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="RAG Knowledge Assistant", lifespan=lifespan)
-app.mount(
-    "/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static"
-)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(query_router)
