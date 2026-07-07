@@ -2,7 +2,7 @@ import uuid
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langchain_core.language_models import BaseChatModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,3 +51,36 @@ async def get_current_user(
 
 def get_llm() -> BaseChatModel:
     return get_chat_model()
+
+
+async def get_current_user_from_cookie(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Cookie-based counterpart to get_current_user for server-rendered pages.
+
+    Returns None on any failure instead of raising, so page routes can decide
+    whether to redirect (e.g. to /login) rather than return a 401 JSON error.
+    """
+    token = request.cookies.get("access_token")
+    if token is None:
+        return None
+
+    try:
+        payload = decode_token(token)
+    except jwt.PyJWTError:
+        return None
+
+    if payload.get("type") != "access":
+        return None
+
+    raw_id: str | None = payload.get("sub")
+    if raw_id is None:
+        return None
+
+    try:
+        user_id = uuid.UUID(raw_id)
+    except ValueError:
+        return None
+
+    return await db.get(User, user_id)

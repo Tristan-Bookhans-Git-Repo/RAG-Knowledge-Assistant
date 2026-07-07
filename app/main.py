@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
@@ -13,9 +13,9 @@ from app.config import settings
 from app.db.session import engine
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
+from app.routers.frontend import router as frontend_router
 from app.routers.query import router as query_router
 from app.services.embeddings import get_embeddings, validate_embedding_dim
-from app.templating import templates
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +32,7 @@ app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), na
 app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(query_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "index.html")
+app.include_router(frontend_router)
 
 
 @app.get("/health")
