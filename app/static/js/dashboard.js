@@ -143,8 +143,15 @@ function setupQueryForm() {
         }
 
         const data = await response.json();
+        const isClarification = data.type === "clarification";
 
+        document.getElementById("query-answer-heading").textContent = isClarification
+            ? "Can you clarify?"
+            : "Answer";
         document.getElementById("query-answer").textContent = data.answer;
+
+        const sourcesSection = document.getElementById("query-sources-section");
+        sourcesSection.hidden = isClarification;
 
         const sourcesList = document.getElementById("query-sources");
         sourcesList.innerHTML = "";

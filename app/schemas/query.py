@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -16,6 +17,7 @@ class SourceResponse(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    type: Literal["answer", "clarification"]
     answer: str
     sources: list[SourceResponse]
     used_web_search: bool

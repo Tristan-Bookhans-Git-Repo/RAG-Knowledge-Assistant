@@ -53,6 +53,7 @@ async def query(
         for s in result["sources"]
     ]
     return QueryResponse(
+        type=result["type"],
         answer=result["answer"],
         sources=sources,
         used_web_search=result["used_web_search"],

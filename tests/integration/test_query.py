@@ -79,6 +79,48 @@ class _FakeRAGModel(BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=self._respond(messages))])
 
 
+class _FakeClarifyModel(BaseChatModel):
+    """Fake LLM that always asks for clarification instead of retrieving."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake-clarify"
+
+    def bind_tools(self, tools: Any, **kwargs: Any) -> "_FakeClarifyModel":
+        return self
+
+    def _respond(self, messages: list[BaseMessage]) -> AIMessage:
+        return AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "clarify_tool",
+                    "args": {"question_to_user": "Which document do you mean?"},
+                    "id": "tc_001",
+                    "type": "tool_call",
+                }
+            ],
+        )
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=self._respond(messages))])
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=self._respond(messages))])
+
+
 @pytest.fixture
 async def query_client() -> AsyncGenerator[AsyncClient, None]:
     test_engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
@@ -153,6 +195,7 @@ async def test_query_returns_200_with_answer_and_sources(
 
     assert response.status_code == 200
     body = response.json()
+    assert body["type"] == "answer"
     assert body["answer"] != ""
     assert len(body["sources"]) > 0
     assert "used_web_search" in body
@@ -196,6 +239,28 @@ async def test_query_source_filename_matches_uploaded_document(
     assert response.status_code == 200
     source = response.json()["sources"][0]
     assert source["filename"] == "notes.pdf"
+
+
+# ── clarification ────────────────────────────────────────────────────────
+
+
+async def test_query_returns_clarification_type_when_agent_asks_for_clarification(
+    query_client: AsyncClient,
+) -> None:
+    app.dependency_overrides[get_llm] = lambda: _FakeClarifyModel()
+
+    token, _ = await _register_and_token(query_client)
+    response = await query_client.post(
+        "/query",
+        json={"question": "tell me something"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["type"] == "clarification"
+    assert body["answer"] == "Which document do you mean?"
+    assert body["sources"] == []
 
 
 # ── validation ─────────────────────────────────────────────────────────────
