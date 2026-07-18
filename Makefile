@@ -19,7 +19,7 @@ migrate:
 
 pull-models:
 	docker compose exec ollama ollama pull nomic-embed-text
-	docker compose exec ollama ollama pull llama3.2
+	docker compose exec ollama ollama pull qwen2.5:7b
 
 test:
 	docker compose exec app pytest -v $(ARGS)

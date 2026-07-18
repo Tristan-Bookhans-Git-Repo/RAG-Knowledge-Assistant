@@ -10,6 +10,7 @@ class QueryRequest(BaseModel):
 
 class SourceResponse(BaseModel):
     document_id: uuid.UUID
+    filename: str
     chunk_index: int
     text: str
 

@@ -1,9 +1,13 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from langchain_core.language_models import BaseChatModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.dependencies import get_current_user, get_llm
+from app.models.document import Document
 from app.models.user import User
 from app.schemas.query import QueryRequest, QueryResponse, SourceResponse
 from app.services import query_service
@@ -30,9 +34,19 @@ async def query(
         db=db,
         llm=llm,
     )
+
+    document_ids = {s["document_id"] for s in result["sources"]}
+    filenames: dict[uuid.UUID, str] = {}
+    if document_ids:
+        rows = await db.execute(
+            select(Document.id, Document.filename).where(Document.id.in_(document_ids))
+        )
+        filenames = {row.id: row.filename for row in rows}
+
     sources = [
         SourceResponse(
             document_id=s["document_id"],
+            filename=filenames.get(s["document_id"], "Unknown document"),
             chunk_index=s["chunk_index"],
             text=s["content"],
         )

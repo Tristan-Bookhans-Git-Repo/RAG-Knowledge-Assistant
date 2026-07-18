@@ -26,6 +26,8 @@ This fails fast at boot rather than silently storing incompatible vectors.
 
 ## Consequences
 
-- Switching between Ollama and OpenAI requires only changing `LLM_PROVIDER` in `.env`. No schema change, no reindex
+- Switching between Ollama and OpenAI requires no schema change — the `vector(768)` column accepts both providers' output, and the app boots cleanly with only a `LLM_PROVIDER` change
+- Embeddings from different models are **not comparable, even at the same dimension**: each model embeds into its own vector space, so stored chunks must still be re-embedded after a provider switch for retrieval quality. Pinning the dimension reduces that migration to a data backfill — no `ALTER`, no schema migration
+- The startup assertion catches dimension mismatches loudly at boot; it cannot catch a model/space mismatch — that failure mode is silent retrieval degradation
 - 768 dimensions is slightly lower precision than OpenAI's 1536-dim default, but adequate for document retrieval at this scale
 - If a future embedding model does not support 768-dim output, a migration and full reindex would be required — this is acceptable as a known future cost

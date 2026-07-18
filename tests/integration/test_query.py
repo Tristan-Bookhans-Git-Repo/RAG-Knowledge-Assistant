@@ -173,6 +173,29 @@ async def test_query_source_fields_present(query_client: AsyncClient) -> None:
     assert "document_id" in source
     assert "chunk_index" in source
     assert "text" in source
+    assert "filename" in source
+
+
+async def test_query_source_filename_matches_uploaded_document(
+    query_client: AsyncClient,
+) -> None:
+    token, _ = await _register_and_token(query_client)
+    upload = await query_client.post(
+        "/documents/upload",
+        files={"file": ("notes.pdf", _make_pdf("Ollama runs models locally."), "application/pdf")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert upload.status_code == 201
+
+    response = await query_client.post(
+        "/query",
+        json={"question": "What is Ollama?"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    source = response.json()["sources"][0]
+    assert source["filename"] == "notes.pdf"
 
 
 # ── validation ─────────────────────────────────────────────────────────────
@@ -193,6 +216,21 @@ async def test_query_returns_400_for_blank_question(query_client: AsyncClient) -
 async def test_query_returns_401_without_token(query_client: AsyncClient) -> None:
     response = await query_client.post("/query", json={"question": "What is RAG?"})
     assert response.status_code == 401
+
+
+# ── cookie auth (dashboard query panel) ─────────────────────────────────────
+
+
+async def test_query_accessible_via_cookie_only(query_client: AsyncClient) -> None:
+    """The dashboard's query panel authenticates via cookie, not a Bearer header —
+    same fallback path documented in app/dependencies.py::get_current_user."""
+    email = unique_email()
+    await query_client.post("/auth/register", json={"email": email, "password": "pass1234"})
+    await query_client.post("/auth/login", json={"email": email, "password": "pass1234"})
+
+    response = await query_client.post("/query", json={"question": "What is RAG?"})
+
+    assert response.status_code == 200
 
 
 # ── tenant isolation (security) ────────────────────────────────────────────
