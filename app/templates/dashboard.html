@@ -34,6 +34,32 @@
         {% endfor %}
     </tbody>
 </table>
+
+<h1>Ask a question</h1>
+
+<form id="query-form" novalidate>
+    <label for="query-question">Question</label>
+    <textarea id="query-question" name="question" rows="3" required></textarea>
+
+    <label class="checkbox-label">
+        <input type="checkbox" id="query-web-search" name="use_web_search" />
+        Include web search
+    </label>
+
+    <p id="query-error" class="form-error" hidden></p>
+
+    <button type="submit">Ask</button>
+</form>
+
+<div id="query-result" hidden>
+    <h2 id="query-answer-heading">Answer</h2>
+    <p id="query-answer"></p>
+
+    <div id="query-sources-section">
+        <h3>Sources</h3>
+        <ul id="query-sources"></ul>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

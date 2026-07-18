@@ -100,5 +100,69 @@ function setupDeleteButtons() {
     });
 }
 
+function buildSourceItem(source) {
+    // Built with textContent, not innerHTML — filename and text both come from
+    // user-uploaded document content and must not be interpreted as HTML.
+    const item = document.createElement("li");
+
+    const doc = document.createElement("strong");
+    doc.textContent = source.filename;
+
+    const excerpt = document.createElement("p");
+    excerpt.textContent = source.text;
+
+    item.append(doc, excerpt);
+    return item;
+}
+
+function setupQueryForm() {
+    const form = document.getElementById("query-form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const errorEl = document.getElementById("query-error");
+        const resultEl = document.getElementById("query-result");
+        errorEl.hidden = true;
+        resultEl.hidden = true;
+
+        const response = await fetch("/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                question: form.elements.question.value,
+                use_web_search: form.elements.use_web_search.checked,
+            }),
+        });
+
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            errorEl.textContent = body.detail || "Something went wrong. Please try again.";
+            errorEl.hidden = false;
+            return;
+        }
+
+        const data = await response.json();
+        const isClarification = data.type === "clarification";
+
+        document.getElementById("query-answer-heading").textContent = isClarification
+            ? "Can you clarify?"
+            : "Answer";
+        document.getElementById("query-answer").textContent = data.answer;
+
+        const sourcesSection = document.getElementById("query-sources-section");
+        sourcesSection.hidden = isClarification;
+
+        const sourcesList = document.getElementById("query-sources");
+        sourcesList.innerHTML = "";
+        for (const source of data.sources) {
+            sourcesList.appendChild(buildSourceItem(source));
+        }
+
+        resultEl.hidden = false;
+    });
+}
+
 setupUploadForm();
 setupDeleteButtons();
+setupQueryForm();

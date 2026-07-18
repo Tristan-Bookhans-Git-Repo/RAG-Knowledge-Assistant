@@ -109,6 +109,8 @@ async def test_dashboard_returns_200_with_upload_form_when_authenticated(
     assert response.status_code == 200
     assert 'id="upload-form"' in response.text
     assert 'id="documents-table"' in response.text
+    assert 'id="query-form"' in response.text
+    assert 'id="query-result"' in response.text
 
 
 async def test_dashboard_lists_uploaded_document(client: AsyncClient) -> None:

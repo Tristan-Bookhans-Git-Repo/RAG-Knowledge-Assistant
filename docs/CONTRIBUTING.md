@@ -15,7 +15,7 @@ No Python, Node, or other tools need to be installed on the host. Everything run
 cp .env.example .env           # fill in any secrets you need locally
 make up                        # builds images and starts db, ollama, app
 make migrate                   # runs alembic upgrade head
-make pull-models               # downloads nomic-embed-text and llama3.2 into the ollama volume
+make pull-models               # downloads nomic-embed-text and qwen2.5:7b into the ollama volume
 ```
 
 The app reloads automatically on file changes (uvicorn `--reload` + volume mount).
