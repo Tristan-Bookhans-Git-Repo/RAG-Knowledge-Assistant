@@ -1,0 +1,181 @@
+:root {
+    --color-bg: #f7f7f8;
+    --color-surface: #ffffff;
+    --color-border: #e2e2e6;
+    --color-text: #1a1a1e;
+    --color-muted: #6b6b75;
+    --color-accent: #3554d1;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.navbar__brand {
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--color-text);
+}
+
+.navbar__links {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.navbar__links a {
+    text-decoration: none;
+    color: var(--color-muted);
+}
+
+.navbar__links a:hover {
+    color: var(--color-accent);
+}
+
+.content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 320px;
+}
+
+form label {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+}
+
+form input,
+form textarea {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+form textarea {
+    resize: vertical;
+}
+
+.checkbox-label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text);
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
+form button {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.form-error {
+    color: #c62828;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+#documents-table {
+    width: 100%;
+    margin-top: 1.5rem;
+    border-collapse: collapse;
+}
+
+#documents-table th,
+#documents-table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+#documents-table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.delete-btn {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: #c62828;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #fdecea;
+}
+
+#query-form {
+    max-width: 640px;
+}
+
+#query-result {
+    max-width: 640px;
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+#query-sources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+#query-sources li {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+}
+
+#query-sources li strong {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    margin-bottom: 0.25rem;
+}
+
+#query-sources p {
+    margin: 0;
+    font-size: 0.9rem;
+}

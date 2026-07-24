@@ -53,6 +53,38 @@ async def test_login_valid_credentials_returns_200_with_tokens(client: AsyncClie
     assert "refresh_token" in body
 
 
+async def test_login_sets_httponly_cookies(client: AsyncClient) -> None:
+    email = unique_email()
+    await client.post("/auth/register", json={"email": email, "password": "password123"})
+    response = await client.post("/auth/login", json={"email": email, "password": "password123"})
+
+    assert "access_token" in response.cookies
+    assert "refresh_token" in response.cookies
+
+    set_cookie_headers = response.headers.get_list("set-cookie")
+    access_cookie = next(h for h in set_cookie_headers if h.startswith("access_token="))
+    refresh_cookie = next(h for h in set_cookie_headers if h.startswith("refresh_token="))
+
+    assert "httponly" in access_cookie.lower()
+    assert "samesite=lax" in access_cookie.lower()
+    assert "httponly" in refresh_cookie.lower()
+    assert "path=/auth/refresh" in refresh_cookie.lower()
+
+
+async def test_login_does_not_set_cookies_on_failure(client: AsyncClient) -> None:
+    response = await client.post(
+        "/auth/login", json={"email": unique_email(), "password": "password123"}
+    )
+    assert "access_token" not in response.cookies
+
+
+async def test_register_does_not_set_cookies(client: AsyncClient) -> None:
+    response = await client.post(
+        "/auth/register", json={"email": unique_email(), "password": "password123"}
+    )
+    assert "access_token" not in response.cookies
+
+
 async def test_login_wrong_password_returns_401(client: AsyncClient) -> None:
     email = unique_email()
     await client.post("/auth/register", json={"email": email, "password": "password123"})
@@ -118,6 +150,38 @@ async def test_refresh_returns_different_tokens_than_original(client: AsyncClien
     assert refreshed.json()["refresh_token"] != refresh_token
 
 
+async def test_refresh_sets_new_cookies(client: AsyncClient) -> None:
+    reg = await client.post(
+        "/auth/register", json={"email": unique_email(), "password": "password123"}
+    )
+    refresh_token = reg.json()["refresh_token"]
+
+    response = await client.post("/auth/refresh", json={"refresh_token": refresh_token})
+
+    assert "access_token" in response.cookies
+    assert "refresh_token" in response.cookies
+
+
+async def test_refresh_falls_back_to_cookie_when_no_body_token(client: AsyncClient) -> None:
+    email = unique_email()
+    await client.post("/auth/register", json={"email": email, "password": "password123"})
+    # login stores the refresh_token cookie on the client's cookie jar
+    await client.post("/auth/login", json={"email": email, "password": "password123"})
+
+    # no refresh_token in the body — only the cookie set by login is available
+    response = await client.post("/auth/refresh", json={})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "access_token" in body
+    assert "refresh_token" in body
+
+
+async def test_refresh_with_no_token_anywhere_returns_401(client: AsyncClient) -> None:
+    response = await client.post("/auth/refresh", json={})
+    assert response.status_code == 401
+
+
 # ---------------------------------------------------------------------------
 # Logout
 # ---------------------------------------------------------------------------
@@ -126,6 +190,20 @@ async def test_refresh_returns_different_tokens_than_original(client: AsyncClien
 async def test_logout_returns_204(client: AsyncClient) -> None:
     response = await client.post("/auth/logout")
     assert response.status_code == 204
+
+
+async def test_logout_clears_auth_cookies(client: AsyncClient) -> None:
+    email = unique_email()
+    await client.post("/auth/register", json={"email": email, "password": "password123"})
+    await client.post("/auth/login", json={"email": email, "password": "password123"})
+
+    response = await client.post("/auth/logout")
+
+    set_cookie_headers = response.headers.get_list("set-cookie")
+    access_cookie = next(h for h in set_cookie_headers if h.startswith("access_token="))
+    refresh_cookie = next(h for h in set_cookie_headers if h.startswith("refresh_token="))
+    assert 'access_token=""' in access_cookie or "access_token=;" in access_cookie
+    assert 'refresh_token=""' in refresh_cookie or "refresh_token=;" in refresh_cookie
 
 
 # ---------------------------------------------------------------------------

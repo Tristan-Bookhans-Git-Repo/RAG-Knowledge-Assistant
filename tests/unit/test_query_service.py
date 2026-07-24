@@ -49,6 +49,10 @@ def _web_search_event() -> dict[str, Any]:
     return {"event": "on_tool_end", "name": "web_search_tool", "data": {"output": []}}
 
 
+def _clarify_event() -> dict[str, Any]:
+    return {"event": "on_tool_end", "name": "clarify_tool", "data": {"output": None}}
+
+
 def _mock_db() -> MagicMock:
     db = MagicMock()
     db.commit = AsyncMock()
@@ -61,6 +65,24 @@ async def test_run_returns_answer() -> None:
     with patch("app.services.query_service.build_agent", return_value=agent):
         result = await run("What is the answer?", False, uuid.uuid4(), db)
     assert result["answer"] == "The answer is 42."
+
+
+async def test_run_type_defaults_to_answer() -> None:
+    agent = _make_agent([_final_state_event("The answer is 42.")])
+    db = _mock_db()
+    with patch("app.services.query_service.build_agent", return_value=agent):
+        result = await run("What is the answer?", False, uuid.uuid4(), db)
+    assert result["type"] == "answer"
+
+
+async def test_run_type_is_clarification_when_clarify_tool_called() -> None:
+    agent = _make_agent([_clarify_event(), _final_state_event("Which document do you mean?")])
+    db = _mock_db()
+    with patch("app.services.query_service.build_agent", return_value=agent):
+        result = await run("tell me something", False, uuid.uuid4(), db)
+    assert result["type"] == "clarification"
+    assert result["answer"] == "Which document do you mean?"
+    assert result["sources"] == []
 
 
 async def test_run_extracts_sources_from_retrieve_event() -> None:

@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -11,6 +11,7 @@ from app.services.vector_store import SimilarityResult
 
 
 class QueryResult(TypedDict):
+    type: Literal["answer", "clarification"]
     answer: str
     sources: list[SimilarityResult]
     used_web_search: bool
@@ -26,6 +27,7 @@ async def run(
     agent = build_agent(user_id, db, use_web_search=use_web_search, llm=llm)
     sources: list[SimilarityResult] = []
     used_web_search_detected = False
+    response_type: Literal["answer", "clarification"] = "answer"
     final_state: dict[str, Any] | None = None
 
     async for event in agent.astream_events(
@@ -46,6 +48,8 @@ async def run(
                     sources.extend(artifact)
             elif tool_name == "web_search_tool":
                 used_web_search_detected = True
+            elif tool_name == "clarify_tool":
+                response_type = "clarification"
 
         elif kind == "on_chain_end":
             output = event["data"].get("output")
@@ -68,6 +72,7 @@ async def run(
     await db.commit()
 
     return QueryResult(
+        type=response_type,
         answer=answer,
         sources=sources,
         used_web_search=used_web_search_detected,

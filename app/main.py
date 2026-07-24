@@ -1,16 +1,19 @@
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.config import settings
 from app.db.session import engine
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
+from app.routers.frontend import router as frontend_router
 from app.routers.query import router as query_router
 from app.services.embeddings import get_embeddings, validate_embedding_dim
 
@@ -25,9 +28,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="RAG Knowledge Assistant", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(query_router)
+app.include_router(frontend_router)
 
 
 @app.get("/health")
