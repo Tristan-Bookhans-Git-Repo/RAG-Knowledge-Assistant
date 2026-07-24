@@ -48,6 +48,34 @@ async def test_static_auth_js_is_served(client: AsyncClient) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 401 handling (US-6.5) — regression guards on the served JS content, since
+# this project has no JS test runner (see CONTRIBUTING.md, pytest only).
+# ---------------------------------------------------------------------------
+
+
+async def test_main_js_defines_auth_fetch_helper(client: AsyncClient) -> None:
+    response = await client.get("/static/js/main.js")
+    assert "async function authFetch(" in response.text
+    assert "window.location.href = \"/login\"" in response.text
+
+
+async def test_dashboard_js_uses_auth_fetch_for_every_call(client: AsyncClient) -> None:
+    response = await client.get("/static/js/dashboard.js")
+    text = response.text
+    # 4 authenticated call sites: list, upload, delete, query
+    assert text.count("authFetch(") == 4
+    assert "await fetch(" not in text
+
+
+async def test_auth_js_intentionally_does_not_use_auth_fetch(client: AsyncClient) -> None:
+    # Login/register are pre-auth flows — a 401 means wrong credentials, not an
+    # expired session, so they must show the inline error, not redirect.
+    response = await client.get("/static/js/auth.js")
+    assert "await authFetch(" not in response.text
+    assert "await fetch(" in response.text
+
+
+# ---------------------------------------------------------------------------
 # GET / redirect logic
 # ---------------------------------------------------------------------------
 
