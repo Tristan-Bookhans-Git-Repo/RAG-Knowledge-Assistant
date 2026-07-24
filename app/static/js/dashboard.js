@@ -33,7 +33,7 @@ function buildDocumentRow(doc) {
 }
 
 async function refreshDocuments() {
-    const response = await fetch("/documents");
+    const response = await authFetch("/documents");
     if (!response.ok) return;
 
     const documents = await response.json();
@@ -66,7 +66,7 @@ function setupUploadForm() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("/documents/upload", {
+        const response = await authFetch("/documents/upload", {
             method: "POST",
             body: formData,
         });
@@ -93,7 +93,7 @@ function setupDeleteButtons() {
             return;
         }
 
-        const response = await fetch(`/documents/${target.dataset.id}`, { method: "DELETE" });
+        const response = await authFetch(`/documents/${target.dataset.id}`, { method: "DELETE" });
         if (response.ok) {
             await refreshDocuments();
         }
@@ -126,7 +126,7 @@ function setupQueryForm() {
         errorEl.hidden = true;
         resultEl.hidden = true;
 
-        const response = await fetch("/query", {
+        const response = await authFetch("/query", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
