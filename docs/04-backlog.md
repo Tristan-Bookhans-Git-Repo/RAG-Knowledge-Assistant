@@ -257,7 +257,7 @@ As the system, I want the JS to handle 401 responses, so that expired sessions r
 
 **US-7.1: GitHub Actions CI workflow**
 As a developer, I want CI to run on every PR, so that broken code cannot be merged.
-- `.github/workflows/ci.yaml` triggers on pull requests to `main`
+- `.github/workflows/ci.yml` triggers on every push (broader than PR-only, for faster feedback)
 - Steps: checkout → build Docker image (cached) → start pgvector container → run migrations → ruff check → mypy → pytest
 - Ollama is not started in CI — LLM calls are mocked
 - Workflow fails fast on any red step

@@ -5,15 +5,11 @@ from typing import Any
 
 import pytest
 from fpdf import FPDF
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
 
-from app.config import settings
-from app.db.session import get_db
 from app.dependencies import get_llm
 from app.main import app
 
@@ -122,29 +118,16 @@ class _FakeClarifyModel(BaseChatModel):
 
 
 @pytest.fixture
-async def query_client() -> AsyncGenerator[AsyncClient, None]:
-    test_engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
-    TestSession = async_sessionmaker(test_engine, expire_on_commit=False)
-
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-        async with TestSession() as session:
-            try:
-                yield session
-            except Exception:
-                await session.rollback()
-                raise
-
+async def query_client(embed_client: AsyncClient) -> AsyncGenerator[AsyncClient, None]:
+    # embed_client already covers get_db + get_embeddings (both the Depends()
+    # path for /documents/upload and the retrieve_tool.py patch for query-time
+    # retrieval) — this just layers the LLM override on top for the agent.
     def override_get_llm() -> BaseChatModel:
         return _FakeRAGModel()
 
-    app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_llm] = override_get_llm
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-
-    app.dependency_overrides.clear()
-    await test_engine.dispose()
+    yield embed_client
 
 
 def unique_email() -> str:

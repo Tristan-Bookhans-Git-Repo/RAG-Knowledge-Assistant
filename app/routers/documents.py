@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from langchain_core.embeddings import Embeddings
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +40,7 @@ async def upload_document(
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    embeddings: Embeddings = Depends(get_embeddings),
 ) -> Document:
     filename = file.filename or ""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -73,8 +75,7 @@ async def upload_document(
         text = parse(content, ext)
         chunk_texts = chunk(text)
         if chunk_texts:
-            model = get_embeddings()
-            vectors = model.embed_documents(chunk_texts)
+            vectors = embeddings.embed_documents(chunk_texts)
             db.add_all(
                 [
                     Chunk(
