@@ -38,10 +38,10 @@ async def _register_and_token(client: AsyncClient) -> tuple[str, uuid.UUID]:
 # ---------------------------------------------------------------------------
 
 
-async def test_upload_pdf_returns_201_with_ready_status(client: AsyncClient) -> None:
-    token, _ = await _register_and_token(client)
+async def test_upload_pdf_returns_201_with_ready_status(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
 
-    response = await client.post(
+    response = await embed_client.post(
         "/documents/upload",
         files={"file": ("notes.pdf", _make_pdf(), "application/pdf")},
         headers={"Authorization": f"Bearer {token}"},
@@ -56,11 +56,11 @@ async def test_upload_pdf_returns_201_with_ready_status(client: AsyncClient) -> 
 
 
 async def test_upload_pdf_persists_chunks_with_correct_user_id(
-    client: AsyncClient, db_session: AsyncSession
+    embed_client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    token, user_id = await _register_and_token(client)
+    token, user_id = await _register_and_token(embed_client)
 
-    response = await client.post(
+    response = await embed_client.post(
         "/documents/upload",
         files={"file": ("notes.pdf", _make_pdf(), "application/pdf")},
         headers={"Authorization": f"Bearer {token}"},
@@ -144,23 +144,23 @@ async def test_upload_without_auth_returns_401(client: AsyncClient) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_list_documents_empty_for_new_user(client: AsyncClient) -> None:
-    token, _ = await _register_and_token(client)
+async def test_list_documents_empty_for_new_user(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
 
-    response = await client.get("/documents", headers={"Authorization": f"Bearer {token}"})
+    response = await embed_client.get("/documents", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-async def test_list_documents_returns_uploaded_documents(client: AsyncClient) -> None:
-    token, _ = await _register_and_token(client)
+async def test_list_documents_returns_uploaded_documents(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    await _upload_pdf(client, headers, name="a.pdf")
-    await _upload_pdf(client, headers, name="b.pdf")
+    await _upload_pdf(embed_client, headers, name="a.pdf")
+    await _upload_pdf(embed_client, headers, name="b.pdf")
 
-    response = await client.get("/documents", headers=headers)
+    response = await embed_client.get("/documents", headers=headers)
 
     assert response.status_code == 200
     body = response.json()
@@ -169,17 +169,17 @@ async def test_list_documents_returns_uploaded_documents(client: AsyncClient) ->
     assert body[1]["filename"] == "a.pdf"
 
 
-async def test_list_documents_only_returns_own_documents(client: AsyncClient) -> None:
-    token_a, _ = await _register_and_token(client)
-    token_b, _ = await _register_and_token(client)
+async def test_list_documents_only_returns_own_documents(embed_client: AsyncClient) -> None:
+    token_a, _ = await _register_and_token(embed_client)
+    token_b, _ = await _register_and_token(embed_client)
 
-    await client.post(
+    await embed_client.post(
         "/documents/upload",
         files={"file": ("secret.pdf", _make_pdf(), "application/pdf")},
         headers={"Authorization": f"Bearer {token_a}"},
     )
 
-    response = await client.get("/documents", headers={"Authorization": f"Bearer {token_b}"})
+    response = await embed_client.get("/documents", headers={"Authorization": f"Bearer {token_b}"})
 
     assert response.status_code == 200
     assert response.json() == []
@@ -205,53 +205,53 @@ async def _upload_pdf(client: AsyncClient, headers: dict[str, str], name: str = 
     return upload.json()["id"]
 
 
-async def test_delete_document_returns_204(client: AsyncClient) -> None:
-    token, _ = await _register_and_token(client)
+async def test_delete_document_returns_204(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    doc_id = await _upload_pdf(client, headers)
-    response = await client.delete(f"/documents/{doc_id}", headers=headers)
+    doc_id = await _upload_pdf(embed_client, headers)
+    response = await embed_client.delete(f"/documents/{doc_id}", headers=headers)
 
     assert response.status_code == 204
 
 
-async def test_delete_document_removes_it_from_list(client: AsyncClient) -> None:
-    token, _ = await _register_and_token(client)
+async def test_delete_document_removes_it_from_list(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    doc_id = await _upload_pdf(client, headers)
-    await client.delete(f"/documents/{doc_id}", headers=headers)
-    response = await client.get("/documents", headers=headers)
+    doc_id = await _upload_pdf(embed_client, headers)
+    await embed_client.delete(f"/documents/{doc_id}", headers=headers)
+    response = await embed_client.get("/documents", headers=headers)
 
     assert response.json() == []
 
 
 async def test_delete_document_cascades_to_chunks(
-    client: AsyncClient, db_session: AsyncSession
+    embed_client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    token, _ = await _register_and_token(client)
+    token, _ = await _register_and_token(embed_client)
     headers = {"Authorization": f"Bearer {token}"}
 
-    doc_id = uuid.UUID(await _upload_pdf(client, headers))
+    doc_id = uuid.UUID(await _upload_pdf(embed_client, headers))
 
-    await client.delete(f"/documents/{doc_id}", headers=headers)
+    await embed_client.delete(f"/documents/{doc_id}", headers=headers)
 
     result = await db_session.execute(select(Chunk).where(Chunk.document_id == doc_id))
     assert result.scalars().all() == []
 
 
-async def test_delete_document_wrong_user_returns_403(client: AsyncClient) -> None:
-    token_a, _ = await _register_and_token(client)
-    token_b, _ = await _register_and_token(client)
+async def test_delete_document_wrong_user_returns_403(embed_client: AsyncClient) -> None:
+    token_a, _ = await _register_and_token(embed_client)
+    token_b, _ = await _register_and_token(embed_client)
 
-    upload = await client.post(
+    upload = await embed_client.post(
         "/documents/upload",
         files={"file": ("notes.pdf", _make_pdf(), "application/pdf")},
         headers={"Authorization": f"Bearer {token_a}"},
     )
     doc_id = upload.json()["id"]
 
-    response = await client.delete(
+    response = await embed_client.delete(
         f"/documents/{doc_id}", headers={"Authorization": f"Bearer {token_b}"}
     )
 

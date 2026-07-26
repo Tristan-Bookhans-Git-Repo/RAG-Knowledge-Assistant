@@ -1,0 +1,24 @@
+name: CI Pipeline
+run-name: ${{ github.actor }} pushed to ${{ github.ref }} at ${{ github.repository }}
+on: [push]
+jobs:
+  CI_Pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Create .env file
+        run: cp .env.example .env
+      - name: Build DB service
+        run: docker compose up -d --build db
+      - name: Run migrate
+        run: make migrate
+      - name: Ruff format check
+        run: docker compose run --rm app ruff format --check .
+      - name: Lint check
+        run: docker compose run --rm app ruff check .
+      - name: Type check
+        run: docker compose run --rm app mypy app
+      - name: Run Tests
+        run: docker compose run --rm app pytest -v
+      - run: echo "This job's status is ${{ job.status }}."
