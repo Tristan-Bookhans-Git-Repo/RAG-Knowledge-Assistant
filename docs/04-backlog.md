@@ -266,7 +266,8 @@ As a developer, I want CI to run on every PR, so that broken code cannot be merg
 As a developer, I want main protected, so that no commit bypasses CI.
 - Require status checks to pass before merging
 - Require at least 1 approval (self-review is acceptable when solo)
-- Require linear history (no merge commits)
+- Restrict merges to squash-only (repo setting) — one clean commit per PR, keeps history linear and readable
+- Require linear history (branch protection) as a backstop
 
 **US-7.3: Full coverage verification**
 As a developer, I want to confirm all acceptance criteria have a corresponding test, so that nothing from the PRD slips through.
