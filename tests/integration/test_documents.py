@@ -1,5 +1,6 @@
 import io
 import uuid
+from unittest.mock import patch
 
 from fpdf import FPDF
 from httpx import AsyncClient
@@ -7,6 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chunk import Chunk
+from app.models.document import Document
+from app.services.parsers import UnsupportedFileTypeError
 
 
 def unique_email() -> str:
@@ -55,6 +58,19 @@ async def test_upload_pdf_returns_201_with_ready_status(embed_client: AsyncClien
     assert "created_at" in body
 
 
+async def test_upload_txt_file_succeeds(embed_client: AsyncClient) -> None:
+    token, _ = await _register_and_token(embed_client)
+
+    response = await embed_client.post(
+        "/documents/upload",
+        files={"file": ("notes.txt", b"Plain text content.", "text/plain")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "ready"
+
+
 async def test_upload_pdf_persists_chunks_with_correct_user_id(
     embed_client: AsyncClient, db_session: AsyncSession
 ) -> None:
@@ -73,6 +89,47 @@ async def test_upload_pdf_persists_chunks_with_correct_user_id(
 
     assert len(chunks) > 0
     assert all(c.user_id == user_id for c in chunks)
+
+
+# ---------------------------------------------------------------------------
+# Processing failure — document is marked "failed", not left "processing"
+# ---------------------------------------------------------------------------
+
+
+async def test_upload_marks_document_failed_when_parse_raises_unsupported_type(
+    embed_client: AsyncClient, db_session: AsyncSession
+) -> None:
+    token, user_id = await _register_and_token(embed_client)
+
+    with patch("app.routers.documents.parse", side_effect=UnsupportedFileTypeError("nope")):
+        response = await embed_client.post(
+            "/documents/upload",
+            files={"file": ("notes.pdf", _make_pdf(), "application/pdf")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert response.status_code == 415
+
+    result = await db_session.execute(select(Document).where(Document.user_id == user_id))
+    assert result.scalars().one().status == "failed"
+
+
+async def test_upload_marks_document_failed_on_unexpected_exception(
+    embed_client: AsyncClient, db_session: AsyncSession
+) -> None:
+    token, user_id = await _register_and_token(embed_client)
+
+    with patch("app.routers.documents.chunk", side_effect=RuntimeError("boom")):
+        response = await embed_client.post(
+            "/documents/upload",
+            files={"file": ("notes.pdf", _make_pdf(), "application/pdf")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert response.status_code == 500
+
+    result = await db_session.execute(select(Document).where(Document.user_id == user_id))
+    assert result.scalars().one().status == "failed"
 
 
 # ---------------------------------------------------------------------------
