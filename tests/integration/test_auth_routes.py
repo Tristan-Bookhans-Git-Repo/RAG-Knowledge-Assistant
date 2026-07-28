@@ -1,7 +1,11 @@
 import asyncio
 import uuid
 
+import jwt
 from httpx import AsyncClient
+
+from app.config import settings
+from app.services.auth_service import ALGORITHM
 
 
 def unique_email() -> str:
@@ -135,6 +139,12 @@ async def test_refresh_with_access_token_returns_401(client: AsyncClient) -> Non
 
 async def test_refresh_garbage_token_returns_401(client: AsyncClient) -> None:
     response = await client.post("/auth/refresh", json={"refresh_token": "not.a.valid.token"})
+    assert response.status_code == 401
+
+
+async def test_refresh_missing_sub_claim_returns_401(client: AsyncClient) -> None:
+    token = jwt.encode({"type": "refresh"}, settings.JWT_SECRET, algorithm=ALGORITHM)
+    response = await client.post("/auth/refresh", json={"refresh_token": token})
     assert response.status_code == 401
 
 

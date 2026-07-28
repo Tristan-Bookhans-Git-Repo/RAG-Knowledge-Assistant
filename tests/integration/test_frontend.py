@@ -56,7 +56,7 @@ async def test_static_auth_js_is_served(client: AsyncClient) -> None:
 async def test_main_js_defines_auth_fetch_helper(client: AsyncClient) -> None:
     response = await client.get("/static/js/main.js")
     assert "async function authFetch(" in response.text
-    assert "window.location.href = \"/login\"" in response.text
+    assert 'window.location.href = "/login"' in response.text
 
 
 async def test_dashboard_js_uses_auth_fetch_for_every_call(client: AsyncClient) -> None:
@@ -141,14 +141,14 @@ async def test_dashboard_returns_200_with_upload_form_when_authenticated(
     assert 'id="query-result"' in response.text
 
 
-async def test_dashboard_lists_uploaded_document(client: AsyncClient) -> None:
-    await _register_and_login(client)
-    await client.post(
+async def test_dashboard_lists_uploaded_document(embed_client: AsyncClient) -> None:
+    await _register_and_login(embed_client)
+    await embed_client.post(
         "/documents/upload",
         files={"file": ("notes.pdf", _make_pdf("dashboard test content"), "application/pdf")},
     )
 
-    response = await client.get("/dashboard")
+    response = await embed_client.get("/dashboard")
 
     assert response.status_code == 200
     assert "notes.pdf" in response.text
@@ -175,10 +175,10 @@ async def test_documents_list_accessible_via_cookie_only(client: AsyncClient) ->
     assert response.status_code == 200
 
 
-async def test_documents_upload_accessible_via_cookie_only(client: AsyncClient) -> None:
-    await _register_and_login(client)
+async def test_documents_upload_accessible_via_cookie_only(embed_client: AsyncClient) -> None:
+    await _register_and_login(embed_client)
 
-    response = await client.post(
+    response = await embed_client.post(
         "/documents/upload",
         files={"file": ("cookie.pdf", _make_pdf("cookie auth content"), "application/pdf")},
     )
@@ -186,14 +186,14 @@ async def test_documents_upload_accessible_via_cookie_only(client: AsyncClient) 
     assert response.status_code == 201
 
 
-async def test_documents_delete_accessible_via_cookie_only(client: AsyncClient) -> None:
-    await _register_and_login(client)
-    upload = await client.post(
+async def test_documents_delete_accessible_via_cookie_only(embed_client: AsyncClient) -> None:
+    await _register_and_login(embed_client)
+    upload = await embed_client.post(
         "/documents/upload",
         files={"file": ("cookie.pdf", _make_pdf("cookie auth content"), "application/pdf")},
     )
     doc_id = upload.json()["id"]
 
-    response = await client.delete(f"/documents/{doc_id}")
+    response = await embed_client.delete(f"/documents/{doc_id}")
 
     assert response.status_code == 204

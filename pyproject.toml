@@ -44,6 +44,7 @@ addopts = "--cov=app --cov-report=term-missing --cov-report=html:htmlcov"
 
 [tool.coverage.run]
 omit = ["app/db/migrations/*"]
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
 exclude_lines = [

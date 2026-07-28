@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from langchain_core.embeddings import Embeddings
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +40,7 @@ async def upload_document(
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    embeddings: Embeddings = Depends(get_embeddings),
 ) -> Document:
     filename = file.filename or ""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -68,17 +70,17 @@ async def upload_document(
     db.add(document)
     await db.commit()
     await db.refresh(document)
+    document_id = document.id  # db.rollback() below expires document's attributes
 
     try:
         text = parse(content, ext)
         chunk_texts = chunk(text)
         if chunk_texts:
-            model = get_embeddings()
-            vectors = model.embed_documents(chunk_texts)
+            vectors = embeddings.embed_documents(chunk_texts)
             db.add_all(
                 [
                     Chunk(
-                        document_id=document.id,
+                        document_id=document_id,
                         user_id=current_user.id,
                         chunk_index=i,
                         content=chunk_texts[i],
@@ -93,7 +95,7 @@ async def upload_document(
         return document
     except UnsupportedFileTypeError:
         await db.rollback()
-        doc = await db.get(Document, document.id)
+        doc = await db.get(Document, document_id)
         if doc is not None:
             doc.status = "failed"
             await db.commit()
@@ -102,9 +104,9 @@ async def upload_document(
             detail="File type is not supported.",
         )
     except Exception:
-        logger.exception("Failed to process document %s", document.id)
+        logger.exception("Failed to process document %s", document_id)
         await db.rollback()
-        doc = await db.get(Document, document.id)
+        doc = await db.get(Document, document_id)
         if doc is not None:
             doc.status = "failed"
             await db.commit()
