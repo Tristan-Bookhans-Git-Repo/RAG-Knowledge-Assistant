@@ -1,0 +1,99 @@
+# Deploys the app to Amazon EKS on every push to main.
+#
+# This is a SKELETON: it is valid YAML but a no-op until real AWS infrastructure
+# exists (see backlog E9: Terraform modules). Placeholder
+# values below need to be replaced once that infrastructure is provisioned.
+#
+# Setup steps once AWS is ready:
+#
+# 1. Create an ECR repository to store images:
+#    `aws ecr create-repository --repository-name <repo-name> --region <region>`.
+#    Replace ECR_REPOSITORY and AWS_REGION below.
+#
+# 2. Create the EKS cluster and a Deployment for this app. Replace EKS_DEPLOYMENT 
+#    with the Deployment's name and CONTAINER_NAME with the container name inside 
+#    its pod spec.
+#
+# 3. Store a kubeconfig for the cluster as a GitHub Actions
+#    secret named KUBE_CONFIG_DATA. Store an IAM user's access key as
+#    AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY secrets.
+#
+# 4. Replace APP_URL with the public ALB/ingress URL once one exists, so the
+#    smoke test step can actually reach the deployed app.
+
+name: Deploy to EKS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: MY_AWS_REGION # e.g. us-west-1
+  ECR_REPOSITORY: MY_ECR_REPOSITORY
+  EKS_DEPLOYMENT: MY_EKS_DEPLOYMENT # k8s Deployment name, e.g. rag-api
+  CONTAINER_NAME: MY_CONTAINER_NAME # container name inside that Deployment's pod spec
+  APP_URL: MY_APP_URL # public ALB/ingress URL, e.g. https://rag.example.com
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy to EKS cluster
+        uses: kodermax/kubectl-aws-eks@v1
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: >-
+            set image deployment/${{ env.EKS_DEPLOYMENT }}
+            ${{ env.CONTAINER_NAME }}=${{ steps.build-image.outputs.image }}
+
+      - name: Verify deployment
+        uses: kodermax/kubectl-aws-eks@v1
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: rollout status deployment/${{ env.EKS_DEPLOYMENT }}
+
+      - name: Smoke test /health
+        run: |
+          for i in $(seq 1 10); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/health" || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i/10: got HTTP $status, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health check failed after 10 attempts"
+          exit 1
