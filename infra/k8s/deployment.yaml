@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-api
+  namespace: rag-assistant
+  labels:
+    app: rag-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rag-api
+  template:
+    metadata:
+      labels:
+        app: rag-api
+    spec:
+      containers:
+        - name: rag-api
+          # Placeholder — cd.yml overwrites this via `kubectl set image` on every
+          # deploy. Replace with the real ECR repository URL (see
+          # infra/terraform/modules/ecr output) once infra has been applied.
+          image: PLACEHOLDER_ECR_REPOSITORY_URL:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: rag-api-config
+            - secretRef:
+                name: rag-api-secrets
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # Requests are what the HPA's CPU utilization percentage is
+          # calculated against — without these set, hpa.yaml's 70% target
+          # has nothing to measure against.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

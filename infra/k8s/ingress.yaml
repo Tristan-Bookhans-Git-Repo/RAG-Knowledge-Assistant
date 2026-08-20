@@ -1,0 +1,26 @@
+# Requires the AWS Load Balancer Controller installed on the cluster — it's
+# what actually watches Ingress resources with ingressClassName: alb and
+# provisions the real ALB. Not part of this manifest set; a cluster add-on
+# that needs installing separately (Helm chart, typically) before this
+# Ingress will do anything.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rag-api
+  namespace: rag-assistant
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rag-api
+                port:
+                  number: 80
