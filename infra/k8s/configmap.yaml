@@ -1,0 +1,16 @@
+# Non-sensitive app config. LLM_PROVIDER=openai here deliberately differs
+# from local dev's docker-compose default (ollama) — the EKS node group is
+# t3.medium (2 vCPU / 4GB RAM), nowhere near enough to serve an LLM like
+# qwen2.5:7b at reasonable latency. Ollama stays the local-dev default;
+# OpenAI is what the actual cluster deployment uses.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-api-config
+  namespace: rag-assistant
+data:
+  LLM_PROVIDER: "openai"
+  EMBED_DIM: "768" # matches ADR-001 — requested via OpenAI's dimensions param, same as Ollama's nomic-embed-text output
+  JWT_ACCESS_TTL_MINUTES: "15"
+  JWT_REFRESH_TTL_DAYS: "7"
+  SECURE_COOKIES: "true" # real HTTPS behind the ALB, unlike local docker-compose
