@@ -47,3 +47,8 @@ output "database_url_secret_arn" {
   description = "ARN of the database connection-details secret (excludes the password)"
   value       = module.secrets.database_url_secret_arn
 }
+
+output "github_actions_role_arn" {
+  description = "ARN of the OIDC role cd.yml assumes — set this as the AWS_CD_ROLE_ARN GitHub secret"
+  value       = module.github_oidc.role_arn
+}

@@ -43,3 +43,9 @@ variable "node_desired_size" {
   type        = number
   default     = 2
 }
+
+variable "github_actions_role_arn" {
+  description = "ARN of the IAM role cd.yml assumes via OIDC — granted EKS access so kubectl commands in the deploy workflow can authenticate. Optional so this module doesn't hard-depend on github_oidc."
+  type        = string
+  default     = null
+}

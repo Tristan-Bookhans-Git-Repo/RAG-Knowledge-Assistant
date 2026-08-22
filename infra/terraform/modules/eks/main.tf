@@ -21,6 +21,24 @@ module "eks" {
     }
   }
 
+  # Grants cd.yml's OIDC role enough Kubernetes RBAC to run `kubectl set
+  # image` / `rollout status` — IAM policies alone don't grant this, EKS
+  # requires this separate principal-to-RBAC mapping (the modern "access
+  # entries" API, replacing the older aws-auth ConfigMap approach).
+  access_entries = var.github_actions_role_arn == null ? {} : {
+    github_actions = {
+      principal_arn = var.github_actions_role_arn
+      policy_associations = {
+        deploy = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
+
   tags = {
     Project = var.name
   }
