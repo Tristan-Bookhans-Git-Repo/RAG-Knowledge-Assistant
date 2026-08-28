@@ -31,9 +31,9 @@ def test_openai_provider_returns_chat_openai(monkeypatch: pytest.MonkeyPatch) ->
     assert isinstance(get_chat_model(), ChatOpenAI)
 
 
-def test_openai_provider_defaults_to_gpt4o(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_openai_provider_defaults_to_gpt56luna(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "LLM_PROVIDER", "openai")
     monkeypatch.setattr(settings, "OPENAI_API_KEY", "sk-test")
     model = get_chat_model()
     assert isinstance(model, ChatOpenAI)
-    assert model.model_name == "gpt-4o"
+    assert model.model_name == "gpt-5.6-luna"

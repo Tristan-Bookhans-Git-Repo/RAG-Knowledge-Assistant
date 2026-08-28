@@ -10,6 +10,6 @@ def get_chat_model() -> BaseChatModel:
     if settings.LLM_PROVIDER == "openai":
         return ChatOpenAI(
             api_key=SecretStr(settings.OPENAI_API_KEY),
-            model="gpt-4o",
+            model="gpt-5.6-luna",
         )
     return ChatOllama(base_url=settings.OLLAMA_HOST, model=settings.OLLAMA_CHAT_MODEL)
