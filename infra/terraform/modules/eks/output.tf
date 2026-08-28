@@ -1,5 +1,5 @@
 output "cluster_name" {
-  description = "Name of the EKS cluster — used by `aws eks update-kubeconfig --name`"
+  description = "Name of the EKS cluster, used by `aws eks update-kubeconfig --name`"
   value       = module.eks.cluster_name
 }
 

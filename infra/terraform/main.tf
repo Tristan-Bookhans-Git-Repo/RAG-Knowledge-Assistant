@@ -14,11 +14,19 @@ module "ecr" {
   source = "./modules/ecr"
 }
 
+module "github_oidc" {
+  source = "./modules/github_oidc"
+
+  github_org  = var.github_org
+  github_repo = var.github_repo
+}
+
 module "eks" {
   source = "./modules/eks"
 
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
+  vpc_id                  = module.vpc.vpc_id
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  github_actions_role_arn = module.github_oidc.role_arn
 }
 
 module "secrets" {
