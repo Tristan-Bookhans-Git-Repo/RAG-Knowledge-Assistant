@@ -29,7 +29,7 @@ variable "node_instance_types" {
 variable "node_min_size" {
   description = "Minimum number of nodes in the managed node group"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "node_max_size" {
@@ -41,11 +41,10 @@ variable "node_max_size" {
 variable "node_desired_size" {
   description = "Desired number of nodes in the managed node group"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "github_actions_role_arn" {
-  description = "ARN of the IAM role cd.yml assumes via OIDC — granted EKS access so kubectl commands in the deploy workflow can authenticate. Optional so this module doesn't hard-depend on github_oidc."
+  description = "ARN of the IAM role cd.yml assumes via OIDC, granted EKS access so kubectl commands in the deploy workflow can authenticate."
   type        = string
-  default     = null
 }
