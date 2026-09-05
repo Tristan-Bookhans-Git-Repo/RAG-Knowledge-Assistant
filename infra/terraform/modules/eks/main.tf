@@ -8,6 +8,27 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.private_subnet_ids
 
+  # Module default is private-only (endpoint_public_access = false), which
+  # blocks kubectl/helm run from an operator's own machine, needed by every
+  # remaining runbook step (manifest apply, migration exec, LB controller
+  # install), not just diagnostics. Open to 0.0.0.0/0 rather than a specific
+  # CIDR: the real auth boundary is IAM + the EKS access entry, not network
+  # reachability, and this cluster only exists for the duration of a single
+  # apply/destroy cycle (ADR-007).
+  endpoint_public_access = true
+
+  # Without these, kube-system stays empty and every node sits at
+  # NotReady/NetworkPluginNotReady forever, regardless of instance type or
+  # size. `before_compute = true` on vpc-cni makes the node group wait for
+  # the CNI addon before launching nodes, avoiding that exact race.
+  addons = {
+    coredns    = {}
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
+    }
+  }
+
   compute_config = {
     enabled = false
   }
@@ -38,7 +59,7 @@ module "eks" {
 # apply, which fails plan with "Invalid for_each argument". A `count`
 # conditioned on `var.github_actions_role_arn == null` hits the same problem
 # one level up (the ARN is unknown at plan time, so the comparison itself is
-# unknown) — so this is unconditional instead, matching how the variable is
+# unknown), so this is unconditional instead, matching how the variable is
 # actually used: main.tf always passes a real ARN, never null.
 resource "aws_eks_access_entry" "github_actions" {
   cluster_name  = module.eks.cluster_name
