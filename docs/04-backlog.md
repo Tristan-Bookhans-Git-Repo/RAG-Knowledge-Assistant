@@ -308,14 +308,20 @@ As a developer, I want a CD workflow file committed now, so that it can be enabl
 
 ### E10 — Deployment (M8)
 
+**Status: closed, not completed.** See `DEPLOYMENT_STATUS.md` at the repo root. A live AWS
+EKS apply was attempted on 28 Aug 2026 and repeatedly failed (Free Tier instance
+restriction, missing cluster addons, missing public endpoint access, RDS/ECR provider
+errors). Stopped deliberately to avoid further spend, not abandoned mid-fix. The app has
+never run on a cluster.
+
 **US-10.1 to US-10.7: Full deployment**
-- AWS credentials configured + OIDC trust for GitHub Actions
-- `terraform apply` — provision all infra
-- First manual ECR push + `kubectl apply -f infra/k8s/`
-- Migration against prod DB: `kubectl exec -it deploy/rag-api -- alembic upgrade head`
-- Smoke test the public ALB URL
-- Enable CD workflow — auto-deploy is now active
-- Write `docs/05-runbook.md`
+- AWS credentials configured + OIDC trust for GitHub Actions — done
+- `terraform apply` — provision all infra — attempted, did not complete successfully
+- First manual ECR push + `kubectl apply -f infra/k8s/` — not reached in a stable state
+- Migration against prod DB: `kubectl exec -it deploy/rag-api -- alembic upgrade head` — not run against a live cluster
+- Smoke test the public ALB URL — not reached
+- Enable CD workflow — auto-deploy is now active — not enabled
+- Write `docs/05-runbook.md` — done
 
 ---
 
@@ -360,4 +366,4 @@ E1 (dev stack, M1)
 | **M5 — Frontend** | E6 | ~31 May | Full flow works in a browser: register → login → upload → query → see citations. |
 | **M6 — Tests and CI** | E7, E8 | ~31 May | `make test` green, `make lint` clean, `make typecheck` clean. CI green on every PR. CD skeleton committed. All acceptance criteria from E3–E5 have a passing test. |
 | **M7 — Infra as code** | E9 | ~7 Jun | `terraform plan` exits 0, `kubectl apply --dry-run` exits 0. No AWS resources created yet. |
-| **M8 — Deployed** | E10 | ~Jun 8+ | App reachable at a public URL. Runbook written. CD workflow enabled. |
+| **M8 — Deployed** | E10 | ~Jun 8+ | **Not met.** App reachable at a public URL, runbook written, CD workflow enabled — only the runbook was completed. Live apply attempted 28 Aug 2026, failed repeatedly, stopped on cost. See `DEPLOYMENT_STATUS.md`. |

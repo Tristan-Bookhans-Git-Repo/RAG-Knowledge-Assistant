@@ -225,3 +225,7 @@ RAG-Knowledge-Assistant.code-workspace
 # Postman
 .postman/
 postman/
+
+# Kubernetes secrets with real values, edited locally during deployment.
+# infra/k8s/secrets.yaml itself stays tracked with CHANGEME placeholders only.
+infra/k8s/*.local.yaml
