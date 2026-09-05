@@ -15,9 +15,10 @@ module "ecr" {
         rulePriority = 1,
         description  = "Keep last 30 tagged images",
         selection = {
-          tagStatus   = "tagged", # every image cd.yml pushes is tagged with the commit SHA
-          countType   = "imageCountMoreThan",
-          countNumber = 30
+          tagStatus      = "tagged", # every image cd.yml pushes is tagged with the commit SHA
+          tagPatternList = ["*"],    # required alongside tagStatus=tagged, "*" means any tag
+          countType      = "imageCountMoreThan",
+          countNumber    = 30
         },
         action = {
           type = "expire"

@@ -11,9 +11,9 @@ variable "engine" {
 }
 
 variable "engine_version" {
-  description = "The engine version to use"
+  description = "The engine version to use. Major version only (e.g. \"16\"), not a pinned patch: RDS periodically retires specific patch releases, and a pinned version like \"16.1\" fails CreateDBInstance once AWS drops it. Major-version-only lets RDS resolve to whatever patch is currently available."
   type        = string
-  default     = "16.1"
+  default     = "16"
 }
 
 variable "instance_class" {
